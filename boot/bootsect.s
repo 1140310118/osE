@@ -95,9 +95,9 @@ ok_load_setup:
 	xor	bh,bh
 	int	0x10
 	
-	mov	cx,#37
+	mov	cx,#38
 	mov	bx,#0x0007		! page 0, attribute 7 (normal)
-	mov	bp,#msg1
+	mov	bp,#msg1		! SZ: es:bp->the string
 	mov	ax,#0x1301		! write string, move cursor
 	int	0x10
 

@@ -261,6 +261,10 @@ end_move:
 	.word	0x00eb,0x00eb
 	out	#0xA1,al
 
+! SZ:在此处停止程序
+die:
+	jmp die
+
 ! well, that certainly wasn't fun :-(. Hopefully it works, and we don't
 ! need no steenking BIOS anyway (except for the initial loading :-).
 ! The BIOS-routine wants lots of unnecessary data, and it's less

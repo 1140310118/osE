@@ -27,6 +27,13 @@ begdata:
 begbss:
 .text
 
+!!! SZ: Print some inane message
+	call read_cursor_pos
+	mov cx,#21
+	mov bp,#msg1
+	call print_str_cx_bp
+
+
 entry start
 start:
 
@@ -39,11 +46,43 @@ start:
 	xor	bh,bh
 	int	0x10		! save it in known place, con_init fetches
 	mov	[0],dx		! it from 0x90000.
+
+!!! SZ: print cursor pos
+	! SZ:print "cursor_pos:"
+	call read_cursor_pos
+	mov cx,#14
+	mov bp,#msg_cursor_pos
+	call print_str_cx_bp
+
+	! SZ: print num
+	mov ax,#INITSEG
+	mov bx,#0x00
+	call print_num_ax_bx_4
+
 ! Get memory size (extended mem, kB)
 
 	mov	ah,#0x88
 	int	0x15
 	mov	[2],ax
+
+!!! SZ: print memory size
+	! SZ:print "memory size: "
+	call read_cursor_pos
+	mov cx,#24
+	mov bp,#msg_memory
+	call print_str_cx_bp
+
+	! SZ: print num
+	mov ax,#INITSEG
+	mov bx,#0x02
+	call print_num_ax_bx_4
+
+	! SZ:print "KB"
+	call read_cursor_pos
+	mov cx,#3
+	mov bp,#msg_KB
+	call print_str_cx_bp
+
 
 ! Get video-card data:
 
@@ -51,6 +90,51 @@ start:
 	int	0x10
 	mov	[4],bx		! bh = display page
 	mov	[6],ax		! al = video mode, ah = window width
+
+!!! SZ: print display page
+	! SZ:print "display page: "
+	call read_cursor_pos
+	mov cx,#16
+	mov bp,#msg_display_page
+	call print_str_cx_bp
+
+	! SZ: print num
+	mov ax,#INITSEG
+	mov bx,#0x04
+	call print_num_ax_bx_4
+
+
+!!! SZ: print video mode
+	! SZ:print "video mode: "
+	call read_cursor_pos
+	mov cx,#14
+	mov bp,#msg_video_mode
+	call print_str_cx_bp
+
+	! SZ: print num
+	mov ax,#INITSEG
+	mov bx,#0x06
+	call print_num_ax_bx_2
+
+!!! SZ: print window width
+	! SZ:print "window width: "
+	call read_cursor_pos
+	mov cx,#16
+	mov bp,#msg_window_width
+	call print_str_cx_bp
+
+	! SZ: print num
+	mov ax,#INITSEG
+	mov bx,#0x07
+	call print_num_ax_bx_2
+
+	call print_CR
+	call print_CR
+	call print_CR
+	call print_CR
+	call print_CR
+	call print_CR
+	
 
 ! check for EGA/VGA and some config parameters
 
@@ -177,6 +261,10 @@ end_move:
 	.word	0x00eb,0x00eb
 	out	#0xA1,al
 
+! SZ:在此处停止程序
+die:
+	jmp die
+
 ! well, that certainly wasn't fun :-(. Hopefully it works, and we don't
 ! need no steenking BIOS anyway (except for the initial loading :-).
 ! The BIOS-routine wants lots of unnecessary data, and it's less
@@ -220,7 +308,114 @@ idt_48:
 gdt_48:
 	.word	0x800		! gdt limit=2048, 256 GDT entries
 	.word	512+gdt,0x9	! gdt base = 0X9xxxx
-	
+
+msg1:
+	.ascii "Now we are in SETUP"
+
+
+msg_cursor_pos:
+	.byte 13,10
+	.ascii "cursor_pos: "
+
+msg_memory:
+	.byte 13,10
+	.ascii "extended memory size: "
+
+msg_KB:
+	.ascii " KB"
+
+msg_display_page:
+	.byte 13,10
+	.ascii "display page: "
+
+msg_video_mode:
+	.byte 13,10
+	.ascii "video mode: "
+
+msg_window_width:
+	.byte 13,10
+	.ascii "window width: "
+
+
+! SZ:打印bx中的参数	 length 4
+!reference: https://github.com/1140310118/MIC/blob/master/oslab/linux-0.11/boot/setup.s
+print_bx_4:
+   mov cx,#4
+   mov dx,bx
+print_digit_4:
+   rol dx,#4	!循环左移
+   mov ax,#0x0e0f
+   and al,dl
+   add al,#0x30
+   cmp al,#0x3a
+   jb outp_4
+   add al,#0x07
+outp_4:
+   int 0x10
+   loop print_digit_4
+   ret
+
+! SZ:打印bx中的参数	 length 2
+print_bx_2:
+   mov cx,#2
+   mov dx,bx
+print_digit_2:
+   rol dx,#4 !循环左移
+   mov ax,#0x0e0f
+   and al,dl
+   add al,#0x30
+   cmp al,#0x3a
+   jb outp_2
+   add al,#0x07
+outp_2:
+   int 0x10
+   loop print_digit_2
+   ret
+
+
+
+! SZ:读取光标位置
+read_cursor_pos:
+	mov	ah,#0x03		! read cursor pos
+	xor	bh,bh
+	int	0x10
+	ret
+
+! SZ:打印字符串
+print_str_cx_bp:
+	mov	bx,#0x0007		! page 0, attribute 7 (normal)
+	mov ax,#SETUPSEG
+	mov es,ax
+	mov	ax,#0x1301		! write string, move cursor
+	int	0x10
+	ret
+
+! SZ:打印由ax:bx指定的内存中的数据 length:4
+print_num_ax_bx_4:
+	mov ax,#INITSEG
+	mov ds,ax
+	mov di,bx
+	mov bx,(di)
+	call print_bx_4
+	ret
+
+! SZ:打印由ax:bx指定的内存中的数据 length:2
+print_num_ax_bx_2:
+	mov ax,#INITSEG
+	mov ds,ax
+	mov di,bx
+	mov bx,(di)
+	call print_bx_2
+	ret
+
+!打印回车换行  
+print_CR:  
+	mov    ax,#0xe0d     ! CR  
+	int    0x10  
+	mov    al,#0xa     ! LF  
+	int    0x10  
+	ret 
+
 .text
 endtext:
 .data

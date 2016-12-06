@@ -1,0 +1,39 @@
+/*
+ *  kernel/who.c
+ *
+ *  (C) 2016  Super Zhang
+ */
+
+/*
+iam()
+第一个系统调用是iam()，其原型为：
+int iam(const char * name);
+完成的功能是将字符串参数name的内容拷贝到内核中保存下来。要求name的长度不能超过23个字符。返回值是拷贝的字符数。如果name的字符个数超过了23，则返回“-1”，并置errno为EINVAL。
+在kernal/who.c中实现此系统调用。
+whoami()
+第二个系统调用是whoami()，其原型为：
+int whoami(char* name, unsigned int size);
+它将内核中由iam()保存的名字拷贝到name指向的用户地址空间中，同时确保不会对name越界访存（name的大小由size说明）。返回值是拷贝的字符数。如果size小于需要的空间，则返回“-1”，并置errno为EINVAL。
+也是在kernal/who.c中实现。
+*/
+
+
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <utime.h>
+#include <sys/stat.h>
+
+#include <linux/sched.h>
+#include <linux/tty.h>
+#include <linux/kernel.h>
+#include <asm/segment.h>
+
+int sys_iam(const char* name){
+	printk("now we are in sys_iam");
+	return 0;
+}
+
+int sys_whoami(char* name,unsigned int size){
+	return 0;
+}

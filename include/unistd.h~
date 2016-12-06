@@ -130,6 +130,7 @@
 #define __NR_setreuid	70
 #define __NR_setregid	71
 
+// SZ: define 系统调用的编号
 #define __NR_iam 	72
 #define __NR_whoami 	73
 
